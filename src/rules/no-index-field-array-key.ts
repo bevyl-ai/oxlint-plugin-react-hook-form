@@ -36,6 +36,10 @@ const rule: Rule.RuleModule = {
 	},
 
 	create(context) {
+		// Matches require a literal useFieldArray call — skip whole files cheaply.
+		if (!context.sourceCode.text.includes('useFieldArray')) {
+			return {};
+		}
 		function isUseFieldArrayResult(identifier: Identifier): boolean {
 			const declarator = resolveDeclarator(context, identifier);
 			return declarator !== undefined && isFormHookCall(declarator.init, ['useFieldArray']);

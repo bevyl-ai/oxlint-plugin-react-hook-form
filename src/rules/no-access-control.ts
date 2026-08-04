@@ -30,6 +30,11 @@ const rule: Rule.RuleModule = {
 	},
 
 	create(context) {
+		// Every match requires a literal hook-name call (useForm / useFormContext /
+		// useFormState), all containing "useForm" — skip whole files cheaply.
+		if (!context.sourceCode.text.includes('useForm')) {
+			return {};
+		}
 		function checkControlReferences(node: Node, controlName: string): void {
 			const controlVar = getDeclaredVariable(context, node, controlName);
 			if (!controlVar) {
