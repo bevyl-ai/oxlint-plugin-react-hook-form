@@ -1,6 +1,6 @@
 import { RuleTester } from 'eslint';
 
-import plugin from '../src/index.js';
+import plugin from '../src/index.ts';
 
 // RuleTester drives bun:test's global describe/it itself, so the run() calls
 // live at the top level rather than inside test() blocks.

@@ -2,7 +2,7 @@
 
 [react-hook-form](https://react-hook-form.com/) lint rules for [oxlint](https://oxc.rs/docs/guide/usage/linter.html) and ESLint 9+.
 
-This is a port of [eslint-plugin-react-hook-form](https://github.com/andykao1213/eslint-plugin-react-hook-form) (MIT) to the modern ESLint rule API (`context.sourceCode.getScope(node)`). The original plugin uses `context.getScope()`, which ESLint 9 removed — so it crashes under ESLint 9 flat config and under oxlint's JS-plugin runtime. This package runs in both.
+This is a port of [eslint-plugin-react-hook-form](https://github.com/andykao1213/eslint-plugin-react-hook-form) (MIT) to the modern ESLint rule API (`context.sourceCode.getScope(node)`). The original plugin uses `context.getScope()`, which ESLint 9 removed — so it crashes under ESLint 9 flat config and under oxlint's JS-plugin runtime. This package runs in both, is written in TypeScript, and ships type declarations.
 
 ## Install
 

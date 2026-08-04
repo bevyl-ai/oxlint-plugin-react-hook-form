@@ -1,3 +1,5 @@
+import type { ESLint, Linter } from 'eslint';
+
 import destructuringFormstate from './rules/destructuring-formstate.js';
 import noAccessControl from './rules/no-access-control.js';
 import noNestedObjectSetvalue from './rules/no-nested-object-setvalue.js';
@@ -13,23 +15,22 @@ const plugin = {
 		'no-nested-object-setvalue': noNestedObjectSetvalue,
 		'no-use-watch': noUseWatch,
 	},
-};
+	configs: {} as Record<'recommended' | 'react-compiler', Linter.Config>,
+} satisfies ESLint.Plugin;
 
 // Flat configs for ESLint 9+. Oxlint users enable the rules in .oxlintrc.json.
-plugin.configs = {
-	recommended: {
-		plugins: { 'react-hook-form': plugin },
-		rules: {
-			'react-hook-form/destructuring-formstate': 'error',
-			'react-hook-form/no-access-control': 'error',
-			'react-hook-form/no-nested-object-setvalue': 'error',
-		},
+plugin.configs.recommended = {
+	plugins: { 'react-hook-form': plugin },
+	rules: {
+		'react-hook-form/destructuring-formstate': 'error',
+		'react-hook-form/no-access-control': 'error',
+		'react-hook-form/no-nested-object-setvalue': 'error',
 	},
-	'react-compiler': {
-		plugins: { 'react-hook-form': plugin },
-		rules: {
-			'react-hook-form/no-use-watch': 'error',
-		},
+};
+plugin.configs['react-compiler'] = {
+	plugins: { 'react-hook-form': plugin },
+	rules: {
+		'react-hook-form/no-use-watch': 'error',
 	},
 };
 

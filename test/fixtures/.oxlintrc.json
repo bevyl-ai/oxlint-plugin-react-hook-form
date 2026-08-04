@@ -1,5 +1,5 @@
 {
-  "jsPlugins": ["../../src/index.js"],
+  "jsPlugins": ["../../dist/index.js"],
   "rules": {
     "react-hook-form/destructuring-formstate": "error",
     "react-hook-form/no-access-control": "error",

@@ -2,15 +2,17 @@
  * Ported from eslint-plugin-react-hook-form (MIT, Chuan-Tse Kao),
  * migrated to the modern `context.sourceCode` API.
  */
-import { findPropertyByName } from '../utils/find-property-by-name.js';
-import { getDeclaredVariable } from '../utils/scope.js';
+import type { Rule } from 'eslint';
+import type { Node } from 'estree';
 
-export default {
+import { findPropertyByName, getDeclaredVariable, isFormHookCall, parentOf } from '../utils/ast.js';
+
+const rule: Rule.RuleModule = {
 	meta: {
 		type: 'problem',
 		docs: {
 			description:
-				"Use destructuring assignment to access the properties of formState. This ensures the hook has subscribed to the state changes.",
+				'Use destructuring assignment to access the properties of formState. This ensures the hook has subscribed to the state changes.',
 			url: 'https://github.com/bevyl-ai/oxlint-plugin-react-hook-form/blob/main/docs/rules/destructuring-formstate.md',
 		},
 		messages: {
@@ -20,13 +22,13 @@ export default {
 	},
 
 	create(context) {
-		function checkIsAccessFormStateProperties(node, formStateName) {
+		function checkIsAccessFormStateProperties(node: Node, formStateName: string): void {
 			const formStateVar = getDeclaredVariable(context, node, formStateName);
 			if (!formStateVar) {
 				return;
 			}
 			for (const reference of formStateVar.references) {
-				const { parent } = reference.identifier;
+				const parent = parentOf(reference.identifier);
 				if (parent.type === 'MemberExpression') {
 					context.report({
 						node: parent.property,
@@ -38,24 +40,19 @@ export default {
 
 		return {
 			VariableDeclarator(node) {
-				if (
-					node.init?.type === 'CallExpression' &&
-					(node.init.callee.name === 'useForm' || node.init.callee.name === 'useFormContext')
-				) {
+				if (isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					const formStateProperty = findPropertyByName(node, 'formState');
 					// Only looking for {formState} or {formState: alias}
 					if (formStateProperty?.value.type !== 'Identifier') {
 						return;
 					}
 					checkIsAccessFormStateProperties(node, formStateProperty.value.name);
-				} else if (
-					node.init?.type === 'CallExpression' &&
-					node.init.callee.name === 'useFormState' &&
-					node.id.type === 'Identifier'
-				) {
+				} else if (isFormHookCall(node.init, ['useFormState']) && node.id.type === 'Identifier') {
 					checkIsAccessFormStateProperties(node, node.id.name);
 				}
 			},
 		};
 	},
 };
+
+export default rule;
