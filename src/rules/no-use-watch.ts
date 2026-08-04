@@ -1,10 +1,12 @@
 /**
  * Ported from eslint-plugin-react-hook-form (MIT, Chuan-Tse Kao; rule by
- * tatsuya.asami), migrated to the modern `context.sourceCode` API.
+ * tatsuya.asami), migrated to the modern `context.sourceCode` API. Form-object
+ * tracking is scope-resolved (upstream used a file-global name set, which
+ * cross-contaminated unrelated bindings of the same name in other components).
  */
 import type { Rule } from 'eslint';
 
-import { findPropertyByName, getDeclaredVariable, isFormHookCall, parentOf } from '../utils/ast.js';
+import { findPropertyByName, forEachNamespaceAccess, isFormHookCall } from '../utils/ast.js';
 
 const rule: Rule.RuleModule = {
 	meta: {
@@ -21,59 +23,39 @@ const rule: Rule.RuleModule = {
 	},
 
 	create(context) {
-		// Variables that were initialized with useForm or useFormContext
-		const formContextVars = new Set<string>();
-
 		return {
 			VariableDeclarator(node) {
-				if (isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
-					if (node.id.type === 'Identifier') {
-						formContextVars.add(node.id.name);
-
-						const formMethodsVar = getDeclaredVariable(context, node, node.id.name);
-						if (!formMethodsVar) {
-							return;
-						}
-						for (const reference of formMethodsVar.references) {
-							const parent = parentOf(reference.identifier);
-							if (
-								parent.type === 'MemberExpression' &&
-								parent.property.type === 'Identifier' &&
-								parent.property.name === 'watch'
-							) {
-								context.report({
-									node: parent.property,
-									messageId: 'useUseWatch',
-								});
-							}
-						}
-					} else {
-						const watchProperty = findPropertyByName(node, 'watch');
-						// Only looking for {watch} or {watch: alias}
-						if (watchProperty?.value.type !== 'Identifier') {
-							return;
-						}
-						context.report({
-							node: watchProperty.value,
-							messageId: 'useUseWatch',
-						});
-					}
+				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;
 				}
-
-				// Destructuring `watch` from a tracked form context variable
-				if (
-					node.init?.type === 'Identifier' &&
-					formContextVars.has(node.init.name) &&
-					node.id.type === 'ObjectPattern'
-				) {
+				if (node.id.type === 'Identifier') {
+					forEachNamespaceAccess(
+						context,
+						node as typeof node & { id: typeof node.id },
+						'watch',
+						(member) => {
+							context.report({
+								node: member.property,
+								messageId: 'useUseWatch',
+							});
+						},
+						(property) => {
+							context.report({
+								node: property.value,
+								messageId: 'useUseWatch',
+							});
+						},
+					);
+				} else {
 					const watchProperty = findPropertyByName(node, 'watch');
-					if (watchProperty?.value.type === 'Identifier') {
-						context.report({
-							node: watchProperty.value,
-							messageId: 'useUseWatch',
-						});
+					// Only looking for {watch} or {watch: alias}
+					if (watchProperty?.value.type !== 'Identifier') {
+						return;
 					}
+					context.report({
+						node: watchProperty.value,
+						messageId: 'useUseWatch',
+					});
 				}
 			},
 		};

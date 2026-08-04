@@ -6,7 +6,13 @@
 import type { Rule } from 'eslint';
 import type { Expression, Identifier, Node, Super } from 'estree';
 
-import { collectIdentifiers, isFormHookCall, parentOf, resolveVariable } from '../utils/ast.js';
+import {
+	collectIdentifiers,
+	isFormHookCall,
+	parentOf,
+	resolveDeclarator,
+	resolveVariable,
+} from '../utils/ast.js';
 
 interface JsxAttribute {
 	type: 'JSXAttribute';
@@ -31,11 +37,8 @@ const rule: Rule.RuleModule = {
 
 	create(context) {
 		function isUseFieldArrayResult(identifier: Identifier): boolean {
-			const definition = resolveVariable(context, identifier, identifier.name)?.defs[0];
-			return (
-				definition?.node.type === 'VariableDeclarator' &&
-				isFormHookCall(definition.node.init, ['useFieldArray'])
-			);
+			const declarator = resolveDeclarator(context, identifier);
+			return declarator !== undefined && isFormHookCall(declarator.init, ['useFieldArray']);
 		}
 
 		// `fields` destructured (possibly aliased) from useFieldArray, or

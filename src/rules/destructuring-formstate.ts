@@ -71,8 +71,8 @@ const rule: Rule.RuleModule = {
 									});
 								}
 							},
-							(aliasName, aliasDeclarator) =>
-								checkIsAccessFormStateProperties(aliasDeclarator, aliasName),
+							(property, aliasDeclarator) =>
+								checkIsAccessFormStateProperties(aliasDeclarator, property.value.name),
 						);
 					}
 				} else if (isFormHookCall(node.init, ['useFormState']) && node.id.type === 'Identifier') {

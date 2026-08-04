@@ -184,7 +184,8 @@ const rule: Rule.RuleModule = {
 								checkCall(call);
 							}
 						},
-						(aliasName, aliasDeclarator) => checkSetValueReferences(aliasDeclarator, aliasName),
+						(property, aliasDeclarator) =>
+							checkSetValueReferences(aliasDeclarator, property.value.name),
 					);
 				}
 			},

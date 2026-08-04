@@ -45,37 +45,85 @@ export function parentOf(node: Node): Node {
 	return (node as Rule.Node).parent!;
 }
 
+/** `obj.name` or `obj["name"]`. */
+export function isPropertyAccess(member: MemberExpression, name: string): boolean {
+	return member.computed
+		? member.property.type === 'Literal' && member.property.value === name
+		: member.property.type === 'Identifier' && member.property.name === name;
+}
+
 /**
  * Visit every use of `<formVar>.<propertyName>` for a form object bound as an
  * Identifier (`const form = useForm()`), including re-destructuring
- * (`const { setValue } = form` / `const { setValue: alias } = form`).
+ * (`const { setValue } = form` / `const { setValue: alias } = form`) and
+ * whole-object aliases (`const f2 = form; f2.setValue(...)`).
  */
 export function forEachNamespaceAccess(
 	context: Rule.RuleContext,
 	declarator: VariableDeclarator & { id: Identifier },
 	propertyName: string,
 	onMemberAccess: (member: MemberExpression) => void,
-	onAliasBinding: (aliasName: string, aliasDeclarator: VariableDeclarator) => void,
+	onAliasBinding: (property: AssignmentProperty & { value: Identifier }, aliasDeclarator: VariableDeclarator) => void,
+	visited: Set<Scope.Variable> = new Set(),
 ): void {
 	const formVar = getDeclaredVariable(context, declarator, declarator.id.name);
-	if (!formVar) {
+	if (!formVar || visited.has(formVar)) {
 		return;
 	}
+	visited.add(formVar);
 	for (const reference of formVar.references) {
 		const parent = parentOf(reference.identifier);
 		if (
 			parent.type === 'MemberExpression' &&
 			parent.object === reference.identifier &&
-			parent.property.type === 'Identifier' &&
-			parent.property.name === propertyName
+			isPropertyAccess(parent, propertyName)
 		) {
 			onMemberAccess(parent);
 		} else if (parent.type === 'VariableDeclarator' && parent.init === reference.identifier) {
-			const property = findPropertyByName(parent, propertyName);
-			if (property?.value.type === 'Identifier') {
-				onAliasBinding(property.value.name, parent);
+			if (parent.id.type === 'ObjectPattern') {
+				const property = findPropertyByName(parent, propertyName);
+				if (property?.value.type === 'Identifier') {
+					onAliasBinding(property as typeof property & { value: Identifier }, parent);
+				}
+			} else if (parent.id.type === 'Identifier') {
+				forEachNamespaceAccess(
+					context,
+					parent as VariableDeclarator & { id: Identifier },
+					propertyName,
+					onMemberAccess,
+					onAliasBinding,
+					visited,
+				);
 			}
 		}
+	}
+}
+
+/**
+ * Resolve an identifier to the VariableDeclarator that ultimately initializes
+ * it, following whole-object alias chains (`const b = a`).
+ */
+export function resolveDeclarator(
+	context: Rule.RuleContext,
+	identifier: Identifier,
+): VariableDeclarator | undefined {
+	const seen = new Set<Scope.Variable>();
+	let current = identifier;
+	for (;;) {
+		const variable = resolveVariable(context, current, current.name);
+		if (!variable || seen.has(variable)) {
+			return undefined;
+		}
+		seen.add(variable);
+		const definition = variable.defs[0];
+		if (definition?.node.type !== 'VariableDeclarator') {
+			return undefined;
+		}
+		if (definition.node.init?.type === 'Identifier') {
+			current = definition.node.init;
+			continue;
+		}
+		return definition.node;
 	}
 }
 

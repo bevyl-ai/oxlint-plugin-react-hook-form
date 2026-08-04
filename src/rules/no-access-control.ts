@@ -72,7 +72,8 @@ const rule: Rule.RuleModule = {
 								});
 							}
 						},
-						(aliasName, aliasDeclarator) => checkControlReferences(aliasDeclarator, aliasName),
+						(property, aliasDeclarator) =>
+							checkControlReferences(aliasDeclarator, property.value.name),
 					);
 				}
 			},

@@ -56,6 +56,14 @@ ruleTester.run('destructuring-formstate', plugin.rules['destructuring-formstate'
 			code: 'const form = useForm(); const { formState } = form; formState.isValid;',
 			errors: [{ messageId: 'useDestructure' }],
 		},
+		{
+			code: 'const form = useForm(); form["formState"].isDirty;',
+			errors: [{ messageId: 'useDestructure' }],
+		},
+		{
+			code: 'const form = useForm(); const f2 = form; f2.formState.isDirty;',
+			errors: [{ messageId: 'useDestructure' }],
+		},
 	],
 });
 
@@ -167,6 +175,9 @@ ruleTester.run('no-use-watch', plugin.rules['no-use-watch'], {
 	valid: [
 		'const { register } = useForm(); const value = useWatch({ name: "test" });',
 		'const methods = useForm(); methods.register("test");',
+		// an unrelated same-named binding in another component must not be flagged
+		'function A() { const methods = useForm(); } function B() { const methods = other(); const { watch } = methods; }',
+		'const methods = useForm(); function inner() { const methods = other(); methods.watch("x"); }',
 	],
 	invalid: [
 		{
@@ -179,6 +190,10 @@ ruleTester.run('no-use-watch', plugin.rules['no-use-watch'], {
 		},
 		{
 			code: 'const methods = useFormContext(); const { watch } = methods;',
+			errors: [{ messageId: 'useUseWatch' }],
+		},
+		{
+			code: 'const methods = useForm(); const m2 = methods; m2.watch("x");',
 			errors: [{ messageId: 'useUseWatch' }],
 		},
 	],
@@ -207,6 +222,12 @@ jsxRuleTester.run('no-index-field-array-key', plugin.rules['no-index-field-array
 		{
 			code: `const result = useFieldArray({ control, name: "items" });
 			result.fields.map((field, index) => <li key={\`row-\${index}\`} />);`,
+			errors: [{ messageId: 'useFieldId' }],
+		},
+		{
+			code: `const { fields } = useFieldArray({ control, name: "items" });
+			const rows = fields;
+			rows.map((row, i) => <li key={i} />);`,
 			errors: [{ messageId: 'useFieldId' }],
 		},
 	],
