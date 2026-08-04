@@ -11,12 +11,25 @@ const ruleTester = new RuleTester({
 	},
 });
 
+const jsxRuleTester = new RuleTester({
+	languageOptions: {
+		ecmaVersion: 2022,
+		sourceType: 'module',
+		parserOptions: {
+			ecmaFeatures: { jsx: true },
+		},
+	},
+});
+
 ruleTester.run('destructuring-formstate', plugin.rules['destructuring-formstate'], {
 	valid: [
 		'const { formState: { isDirty } } = useForm();',
 		'const { register, formState: { errors } } = useFormContext();',
 		'const { isDirty } = useFormState();',
 		'const { formState } = useSomethingElse(); formState.isDirty;',
+		// passing formState around whole is not property access
+		'const form = useForm(); report(form.formState);',
+		'const form = useForm(); form.handleSubmit(onSubmit);',
 	],
 	invalid: [
 		{
@@ -31,6 +44,18 @@ ruleTester.run('destructuring-formstate', plugin.rules['destructuring-formstate'
 			code: 'const formState = useFormState(); formState.isDirty;',
 			errors: [{ messageId: 'useDestructure' }],
 		},
+		{
+			code: 'const form = useForm(); const dirty = form.formState.isDirty;',
+			errors: [{ messageId: 'useDestructure' }],
+		},
+		{
+			code: 'function C() { const form = useFormContext(); return form.formState.errors; }',
+			errors: [{ messageId: 'useDestructure' }],
+		},
+		{
+			code: 'const form = useForm(); const { formState } = form; formState.isValid;',
+			errors: [{ messageId: 'useDestructure' }],
+		},
 	],
 });
 
@@ -38,6 +63,7 @@ ruleTester.run('no-access-control', plugin.rules['no-access-control'], {
 	valid: [
 		'const { control } = useForm(); useController({ control });',
 		'const { control } = useForm(); useFieldArray({ control, name: "test" });',
+		'const form = useForm(); useFieldArray({ control: form.control, name: "test" });',
 	],
 	invalid: [
 		{
@@ -48,6 +74,14 @@ ruleTester.run('no-access-control', plugin.rules['no-access-control'], {
 			code: 'const { control: c } = useFormContext(); c._fields;',
 			errors: [{ messageId: 'noAccessControl' }],
 		},
+		{
+			code: 'const form = useForm(); form.control._formValues;',
+			errors: [{ messageId: 'noAccessControl' }],
+		},
+		{
+			code: 'const form = useForm(); const { control } = form; control._fields;',
+			errors: [{ messageId: 'noAccessControl' }],
+		},
 	],
 });
 
@@ -55,6 +89,7 @@ ruleTester.run('no-nested-object-setvalue', plugin.rules['no-nested-object-setva
 	valid: [
 		"const { setValue } = useForm(); setValue('a.b', 'value');",
 		"const { setValue } = useForm(); setValue('a', value);",
+		"const form = useForm(); form.setValue('a.b', 'value');",
 	],
 	invalid: [
 		{
@@ -63,15 +98,29 @@ ruleTester.run('no-nested-object-setvalue', plugin.rules['no-nested-object-setva
 			output: "const { setValue } = useForm(); setValue('a.b', 'test');",
 		},
 		{
-			code: "const { setValue } = useForm(); setValue('a', ['x', 'y']);",
+			code: "const form = useForm(); form.setValue('a', { b: 'test' });",
 			errors: [{ messageId: 'noNestedObj' }],
-			output: "const { setValue } = useForm(); setValue('a.0', 'x')\nsetValue('a.1', 'y');",
+			output: "const form = useForm(); form.setValue('a.b', 'test');",
 		},
 		{
-			code: "const { setValue } = useForm(); setValue('a', ['x']);",
+			code: "const form = useForm(); const { setValue } = form; setValue('a', { b: 'test' });",
+			errors: [{ messageId: 'noNestedObj' }],
+			output: "const form = useForm(); const { setValue } = form; setValue('a.b', 'test');",
+		},
+		{
+			code: "const { setValue } = useForm(); setValue('a', { b: ['x', 'y'] });",
 			options: [{ bracketAsArrayIndex: true }],
 			errors: [{ messageId: 'noNestedObj' }],
-			output: "const { setValue } = useForm(); setValue('a[0]', 'x');",
+			output: "const { setValue } = useForm(); setValue('a.b[0]', 'x')\nsetValue('a.b[1]', 'y');",
+		},
+		// whole-array setValue: useFieldArray diagnostic, no autofix
+		{
+			code: "const { setValue } = useForm(); setValue('files', ['x']);",
+			errors: [{ messageId: 'useFieldArrayInstead' }],
+		},
+		{
+			code: "const form = useForm(); form.setValue('files', [file]);",
+			errors: [{ messageId: 'useFieldArrayInstead' }],
 		},
 	],
 });
@@ -93,6 +142,34 @@ ruleTester.run('no-use-watch', plugin.rules['no-use-watch'], {
 		{
 			code: 'const methods = useFormContext(); const { watch } = methods;',
 			errors: [{ messageId: 'useUseWatch' }],
+		},
+	],
+});
+
+jsxRuleTester.run('no-index-field-array-key', plugin.rules['no-index-field-array-key'], {
+	valid: [
+		`const { fields } = useFieldArray({ control, name: "items" });
+		fields.map((field, index) => <input key={field.id} name={\`items.\${index}\`} />);`,
+		// not a useFieldArray list
+		'const items = getItems(); items.map((item, index) => <li key={index} />);',
+		`const result = useFieldArray({ control, name: "items" });
+		result.fields.map((field) => <input key={field.id} />);`,
+	],
+	invalid: [
+		{
+			code: `const { fields } = useFieldArray({ control, name: "items" });
+			fields.map((field, index) => <input key={index} />);`,
+			errors: [{ messageId: 'useFieldId' }],
+		},
+		{
+			code: `const { fields: rows } = useFieldArray({ control, name: "items" });
+			rows.map((row, i) => <li key={i} />);`,
+			errors: [{ messageId: 'useFieldId' }],
+		},
+		{
+			code: `const result = useFieldArray({ control, name: "items" });
+			result.fields.map((field, index) => <li key={\`row-\${index}\`} />);`,
+			errors: [{ messageId: 'useFieldId' }],
 		},
 	],
 });

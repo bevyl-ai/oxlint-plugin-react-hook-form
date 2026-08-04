@@ -1,11 +1,20 @@
 /**
- * Ported from eslint-plugin-react-hook-form (MIT, Chuan-Tse Kao),
- * migrated to the modern `context.sourceCode` API.
+ * Ported from eslint-plugin-react-hook-form (MIT, Chuan-Tse Kao), migrated to
+ * the modern `context.sourceCode` API and extended to track the form object
+ * (`const form = useForm(); form.formState.x`), per the react-hook-form
+ * formState rules: the Proxy only subscribes to properties that are
+ * destructured or read before render.
  */
 import type { Rule } from 'eslint';
 import type { Node } from 'estree';
 
-import { findPropertyByName, getDeclaredVariable, isFormHookCall, parentOf } from '../utils/ast.js';
+import {
+	findPropertyByName,
+	forEachNamespaceAccess,
+	getDeclaredVariable,
+	isFormHookCall,
+	parentOf,
+} from '../utils/ast.js';
 
 const rule: Rule.RuleModule = {
 	meta: {
@@ -41,12 +50,31 @@ const rule: Rule.RuleModule = {
 		return {
 			VariableDeclarator(node) {
 				if (isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
-					const formStateProperty = findPropertyByName(node, 'formState');
-					// Only looking for {formState} or {formState: alias}
-					if (formStateProperty?.value.type !== 'Identifier') {
-						return;
+					if (node.id.type === 'ObjectPattern') {
+						const formStateProperty = findPropertyByName(node, 'formState');
+						// Only looking for {formState} or {formState: alias}
+						if (formStateProperty?.value.type !== 'Identifier') {
+							return;
+						}
+						checkIsAccessFormStateProperties(node, formStateProperty.value.name);
+					} else if (node.id.type === 'Identifier') {
+						forEachNamespaceAccess(
+							context,
+							node as typeof node & { id: typeof node.id },
+							'formState',
+							(member) => {
+								const grandparent = parentOf(member);
+								if (grandparent.type === 'MemberExpression') {
+									context.report({
+										node: grandparent.property,
+										messageId: 'useDestructure',
+									});
+								}
+							},
+							(aliasName, aliasDeclarator) =>
+								checkIsAccessFormStateProperties(aliasDeclarator, aliasName),
+						);
 					}
-					checkIsAccessFormStateProperties(node, formStateProperty.value.name);
 				} else if (isFormHookCall(node.init, ['useFormState']) && node.id.type === 'Identifier') {
 					checkIsAccessFormStateProperties(node, node.id.name);
 				}

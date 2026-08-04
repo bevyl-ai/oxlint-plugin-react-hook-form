@@ -31,3 +31,16 @@ NA
 ## Further Reading
 
 [Document of React Hook Form - setValue](https://react-hook-form.com/api/useform/setvalue)
+
+## Strict tracking (this port)
+
+Unlike the original eslint-plugin-react-hook-form rule, this port also tracks the form object itself, so the namespace style is checked too:
+
+```js
+const form = useForm();
+form.formState.isDirty;      // flagged by destructuring-formstate
+form.control._fields;        // flagged by no-access-control
+form.setValue("a", { b: 1 }); // flagged by no-nested-object-setvalue
+
+const { setValue } = form;   // re-destructuring is tracked as well
+```

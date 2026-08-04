@@ -58,12 +58,17 @@ export default [
 
 | Rule | Description | Fixable |
 | --- | --- | --- |
-| [destructuring-formstate](docs/rules/destructuring-formstate.md) | Use destructuring assignment to access `formState` properties, so the hook subscribes to state changes | |
+| [destructuring-formstate](docs/rules/destructuring-formstate.md) | Use destructuring assignment to access `formState` properties, so the Proxy subscribes to state changes | |
 | [no-access-control](docs/rules/no-access-control.md) | Avoid accessing properties of `control` — they are internal | |
-| [no-nested-object-setvalue](docs/rules/no-nested-object-setvalue.md) | Avoid passing an object or array as the second argument of `setValue`; use dot-path keys instead | 🔧 |
+| [no-index-field-array-key](docs/rules/no-index-field-array-key.md) | Use `field.id`, not the array index, as the key when rendering `useFieldArray` fields | |
+| [no-nested-object-setvalue](docs/rules/no-nested-object-setvalue.md) | Avoid passing an object as the second argument of `setValue` (use dot-path keys); whole-array `setValue` should be `useFieldArray` methods | 🔧 (objects only) |
 | [no-use-watch](docs/rules/no-use-watch.md) | Use `useWatch` instead of `watch`, required for React Compiler correctness | |
 
-The `recommended` config enables the first three. `no-use-watch` is in the `react-compiler` config.
+The `recommended` config enables everything except `no-use-watch`, which is in the `react-compiler` config.
+
+### Stricter than upstream
+
+Unlike the original plugin, the rules also track the form object itself — `const form = useForm()` followed by `form.formState.x`, `form.control._x`, or `form.setValue(...)` is checked the same as the destructured style, including re-destructuring (`const { setValue } = form`). Whole-array `setValue` gets a dedicated diagnostic (with no autofix) pointing at `useFieldArray`'s `replace`/`append`/`update`, since [the docs deprecate whole-array `setValue`](https://react-hook-form.com/docs/useform/setvalue) for removal in the next major version.
 
 ## Credits
 

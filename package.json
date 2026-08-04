@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-react-hook-form",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "react-hook-form lint rules for oxlint and ESLint 9+ — a modern-API port of eslint-plugin-react-hook-form",
   "type": "module",
   "main": "dist/index.js",

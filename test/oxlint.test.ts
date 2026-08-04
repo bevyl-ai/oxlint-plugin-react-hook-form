@@ -21,7 +21,13 @@ test('oxlint reports each rule on the violation fixture', async () => {
 	const codes = diagnostics.map((d) => d.code).sort();
 	expect(codes).toEqual([
 		'react-hook-form(destructuring-formstate)',
+		// namespace access: form.formState.isDirty + form.formState.isValid
+		'react-hook-form(destructuring-formstate)',
+		'react-hook-form(destructuring-formstate)',
 		'react-hook-form(no-access-control)',
+		'react-hook-form(no-index-field-array-key)',
+		'react-hook-form(no-nested-object-setvalue)',
+		// whole-array setValue reports under the same rule name
 		'react-hook-form(no-nested-object-setvalue)',
 		'react-hook-form(no-use-watch)',
 	]);
