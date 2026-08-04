@@ -20,6 +20,7 @@ npm install --save-dev oxlint-plugin-react-hook-form
   "rules": {
     "react-hook-form/destructuring-formstate": "error",
     "react-hook-form/no-access-control": "error",
+    "react-hook-form/no-index-field-array-key": "error",
     "react-hook-form/no-nested-object-setvalue": "error",
     "react-hook-form/no-use-watch": "error"
   }

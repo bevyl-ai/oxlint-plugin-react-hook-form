@@ -39,6 +39,14 @@
   "publishConfig": {
     "access": "public"
   },
+  "peerDependencies": {
+    "eslint": ">=9"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    }
+  },
   "scripts": {
     "build": "tsc",
     "test": "tsc && bun test",

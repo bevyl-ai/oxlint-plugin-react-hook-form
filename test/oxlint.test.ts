@@ -7,13 +7,17 @@ async function runOxlint(...files) {
 		['bunx', 'oxlint', '-c', '.oxlintrc.json', '--format', 'json', ...files],
 		{ cwd: FIXTURES, stdout: 'pipe', stderr: 'pipe' },
 	);
-	const [stdout, stderr] = await Promise.all([
+	const [stdout] = await Promise.all([
 		new Response(proc.stdout).text(),
 		new Response(proc.stderr).text(),
 	]);
 	await proc.exited;
-	expect(stderr).not.toContain('Error running JS plugin');
-	return JSON.parse(stdout).diagnostics;
+	const diagnostics = JSON.parse(stdout).diagnostics as Array<{ code: string; message: string }>;
+	// oxlint surfaces JS-plugin runtime errors as diagnostics on stdout
+	for (const diagnostic of diagnostics) {
+		expect(diagnostic.message).not.toContain('Error running JS plugin');
+	}
+	return diagnostics;
 }
 
 test('oxlint reports each rule on the violation fixture', async () => {
