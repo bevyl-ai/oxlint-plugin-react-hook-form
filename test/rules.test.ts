@@ -122,6 +122,44 @@ ruleTester.run('no-nested-object-setvalue', plugin.rules['no-nested-object-setva
 			code: "const form = useForm(); form.setValue('files', [file]);",
 			errors: [{ messageId: 'useFieldArrayInstead' }],
 		},
+		// non-literal leaf values are inlined verbatim, not dropped
+		{
+			code: "const { setValue } = useForm(); setValue('a', { b: value, c: f(x) });",
+			errors: [{ messageId: 'noNestedObj' }],
+			output: "const { setValue } = useForm(); setValue('a.b', value)\nsetValue('a.c', f(x));",
+		},
+		// string-literal keys decompose when path-safe
+		{
+			code: "const { setValue } = useForm(); setValue('a', { 'b-c': 1 });",
+			errors: [{ messageId: 'noNestedObj' }],
+			output: "const { setValue } = useForm(); setValue('a.b-c', 1);",
+		},
+		// no fix offered (and no crash) for non-literal paths
+		{
+			code: "const { setValue } = useForm(); setValue(name, { b: 'x' });",
+			errors: [{ messageId: 'noNestedObj' }],
+		},
+		{
+			code: 'const { setValue } = useForm(); setValue(`a.${i}`, { b: "x" });',
+			errors: [{ messageId: 'noNestedObj' }],
+		},
+		// no fix offered when decomposing would drop or misplace data
+		{
+			code: "const { setValue } = useForm(); setValue('a', { ...spread, b: 'x' });",
+			errors: [{ messageId: 'noNestedObj' }],
+		},
+		{
+			code: "const { setValue } = useForm(); setValue('a', { [key]: 'x' });",
+			errors: [{ messageId: 'noNestedObj' }],
+		},
+		{
+			code: "const { setValue } = useForm(); setValue('a', { 'dotted.key': 'x' });",
+			errors: [{ messageId: 'noNestedObj' }],
+		},
+		{
+			code: "const { setValue } = useForm(); setValue(\"it's\", { b: 'x' });",
+			errors: [{ messageId: 'noNestedObj' }],
+		},
 	],
 });
 
