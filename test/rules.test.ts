@@ -64,6 +64,11 @@ ruleTester.run('destructuring-formstate', plugin.rules['destructuring-formstate'
 			code: 'const form = useForm(); const f2 = form; f2.formState.isDirty;',
 			errors: [{ messageId: 'useDestructure' }],
 		},
+		// escaped hook spelling must not slip past the file-level bail
+		{
+			code: 'const { formState } = useF\\u006Frm(); formState.isDirty;',
+			errors: [{ messageId: 'useDestructure' }],
+		},
 	],
 });
 

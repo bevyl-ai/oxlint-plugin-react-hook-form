@@ -14,6 +14,7 @@ import {
 	getDeclaredVariable,
 	isFormHookCall,
 	parentOf,
+	sourceMayContain,
 } from '../utils/ast.js';
 
 const rule: Rule.RuleModule = {
@@ -33,7 +34,7 @@ const rule: Rule.RuleModule = {
 	create(context) {
 		// Every match requires a literal hook-name call (useForm / useFormContext /
 		// useFormState), all containing "useForm" — skip whole files cheaply.
-		if (!context.sourceCode.text.includes('useForm')) {
+		if (!sourceMayContain(context, 'useForm')) {
 			return {};
 		}
 		function checkIsAccessFormStateProperties(node: Node, formStateName: string): void {

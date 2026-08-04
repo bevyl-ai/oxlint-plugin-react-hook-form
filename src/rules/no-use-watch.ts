@@ -6,7 +6,7 @@
  */
 import type { Rule } from 'eslint';
 
-import { findPropertyByName, forEachNamespaceAccess, isFormHookCall } from '../utils/ast.js';
+import { findPropertyByName, forEachNamespaceAccess, isFormHookCall, sourceMayContain } from '../utils/ast.js';
 
 const rule: Rule.RuleModule = {
 	meta: {
@@ -25,7 +25,7 @@ const rule: Rule.RuleModule = {
 	create(context) {
 		// Every match requires a literal hook-name call (useForm / useFormContext /
 		// useFormState), all containing "useForm" — skip whole files cheaply.
-		if (!context.sourceCode.text.includes('useForm')) {
+		if (!sourceMayContain(context, 'useForm')) {
 			return {};
 		}
 		return {

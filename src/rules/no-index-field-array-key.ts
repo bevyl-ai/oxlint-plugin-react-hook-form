@@ -12,6 +12,7 @@ import {
 	parentOf,
 	resolveDeclarator,
 	resolveVariable,
+	sourceMayContain,
 } from '../utils/ast.js';
 
 interface JsxAttribute {
@@ -37,7 +38,7 @@ const rule: Rule.RuleModule = {
 
 	create(context) {
 		// Matches require a literal useFieldArray call — skip whole files cheaply.
-		if (!context.sourceCode.text.includes('useFieldArray')) {
+		if (!sourceMayContain(context, 'useFieldArray')) {
 			return {};
 		}
 		function isUseFieldArrayResult(identifier: Identifier): boolean {
