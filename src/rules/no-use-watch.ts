@@ -7,7 +7,7 @@
 import type { Rule } from 'eslint';
 import type { VariableDeclarator } from 'estree';
 
-import { findPropertyByName, forEachNamespaceAccess, isFormHookCall, sourceMayContain } from '../utils/ast.js';
+import { findPropertyByName, forEachNamespaceAccess, isFormHookCall } from '../utils/ast.js';
 
 export default {
 	meta: {
@@ -25,13 +25,6 @@ export default {
 
 	createOnce(context: Rule.RuleContext) {
 		return {
-			before() {
-				// Every match requires a literal hook-name call (useForm / useFormContext /
-				// useFormState), all containing "useForm" — skip whole files cheaply.
-				if (!sourceMayContain(context, 'useForm')) {
-					return false;
-				}
-			},
 			VariableDeclarator(node: VariableDeclarator) {
 				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;

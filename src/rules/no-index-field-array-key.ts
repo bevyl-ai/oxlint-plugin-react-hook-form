@@ -12,7 +12,6 @@ import {
 	parentOf,
 	resolveDeclarator,
 	resolveVariable,
-	sourceMayContain,
 } from '../utils/ast.js';
 
 interface JsxAttribute {
@@ -81,12 +80,6 @@ export default {
 		}
 
 		return {
-			before() {
-				// Matches require a literal useFieldArray call — skip whole files cheaply.
-				if (!sourceMayContain(context, 'useFieldArray')) {
-					return false;
-				}
-			},
 			JSXAttribute(node: unknown) {
 				const attribute = node as JsxAttribute;
 				if (attribute.name.name !== 'key' || attribute.value?.type !== 'JSXExpressionContainer') {
