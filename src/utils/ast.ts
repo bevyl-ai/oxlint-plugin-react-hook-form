@@ -45,18 +45,6 @@ export function parentOf(node: Node): Node {
 	return (node as Rule.Node).parent!;
 }
 
-/**
- * Whether the file could contain the given hook name. A raw substring probe
- * misses names spelled with escape sequences (a backslash-u identifier
- * escape can spell useForm without the literal text appearing);
- * every such spelling requires a backslash, so files containing one fall
- * back to full visitors.
- */
-export function sourceMayContain(context: Rule.RuleContext, needle: string): boolean {
-	const text = context.sourceCode.text;
-	return text.includes(needle) || text.includes('\\');
-}
-
 /** `obj.name` or `obj["name"]`. */
 export function isPropertyAccess(member: MemberExpression, name: string): boolean {
 	return member.computed

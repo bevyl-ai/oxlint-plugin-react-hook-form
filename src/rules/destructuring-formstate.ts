@@ -14,7 +14,6 @@ import {
 	getDeclaredVariable,
 	isFormHookCall,
 	parentOf,
-	sourceMayContain,
 } from '../utils/ast.js';
 
 export default {
@@ -49,13 +48,6 @@ export default {
 		}
 
 		return {
-			before() {
-				// Every match requires a literal hook-name call (useForm / useFormContext /
-				// useFormState), all containing "useForm" — skip whole files cheaply.
-				if (!sourceMayContain(context, 'useForm')) {
-					return false;
-				}
-			},
 			VariableDeclarator(node: VariableDeclarator) {
 				if (isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					if (node.id.type === 'ObjectPattern') {
