@@ -3,7 +3,6 @@
  * index) must be used as the component key, otherwise re-renders break field
  * state when items are added, removed, or reordered.
  */
-import type { Rule } from 'eslint';
 import type { Expression, Identifier, Node, Super } from 'estree';
 
 import {
@@ -14,6 +13,7 @@ import {
 	resolveVariable,
 	sourceMayContain,
 } from '../utils/ast.js';
+import type { CreateOnceRule } from '../utils/rule.js';
 
 interface JsxAttribute {
 	type: 'JSXAttribute';
@@ -21,7 +21,7 @@ interface JsxAttribute {
 	value: { type: string; expression?: Expression } | null;
 }
 
-const rule: Rule.RuleModule = {
+const rule: CreateOnceRule = {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -36,11 +36,7 @@ const rule: Rule.RuleModule = {
 		schema: [],
 	},
 
-	create(context) {
-		// Matches require a literal useFieldArray call — skip whole files cheaply.
-		if (!sourceMayContain(context, 'useFieldArray')) {
-			return {};
-		}
+	createOnce(context) {
 		function isUseFieldArrayResult(identifier: Identifier): boolean {
 			const declarator = resolveDeclarator(context, identifier);
 			return declarator !== undefined && isFormHookCall(declarator.init, ['useFieldArray']);
@@ -85,6 +81,12 @@ const rule: Rule.RuleModule = {
 		}
 
 		return {
+			before() {
+				// Matches require a literal useFieldArray call — skip whole files cheaply.
+				if (!sourceMayContain(context, 'useFieldArray')) {
+					return false;
+				}
+			},
 			JSXAttribute(node: unknown) {
 				const attribute = node as JsxAttribute;
 				if (attribute.name.name !== 'key' || attribute.value?.type !== 'JSXExpressionContainer') {

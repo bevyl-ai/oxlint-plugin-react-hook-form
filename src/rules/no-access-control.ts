@@ -5,7 +5,6 @@
  * (e.g. to useController/useFieldArray) stays allowed; only property access
  * on it is flagged.
  */
-import type { Rule } from 'eslint';
 import type { Node } from 'estree';
 
 import {
@@ -16,8 +15,9 @@ import {
 	parentOf,
 	sourceMayContain,
 } from '../utils/ast.js';
+import type { CreateOnceRule } from '../utils/rule.js';
 
-const rule: Rule.RuleModule = {
+const rule: CreateOnceRule = {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -30,12 +30,7 @@ const rule: Rule.RuleModule = {
 		schema: [],
 	},
 
-	create(context) {
-		// Every match requires a literal hook-name call (useForm / useFormContext /
-		// useFormState), all containing "useForm" — skip whole files cheaply.
-		if (!sourceMayContain(context, 'useForm')) {
-			return {};
-		}
+	createOnce(context) {
 		function checkControlReferences(node: Node, controlName: string): void {
 			const controlVar = getDeclaredVariable(context, node, controlName);
 			if (!controlVar) {
@@ -53,6 +48,13 @@ const rule: Rule.RuleModule = {
 		}
 
 		return {
+			before() {
+				// Every match requires a literal hook-name call (useForm / useFormContext /
+				// useFormState), all containing "useForm" — skip whole files cheaply.
+				if (!sourceMayContain(context, 'useForm')) {
+					return false;
+				}
+			},
 			VariableDeclarator(node) {
 				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;

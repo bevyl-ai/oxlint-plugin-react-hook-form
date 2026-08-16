@@ -57,5 +57,8 @@
     "eslint": "^9.39.0",
     "oxlint": "^1.75.0",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@oxlint/plugins": "^1.78.0"
   }
 }
