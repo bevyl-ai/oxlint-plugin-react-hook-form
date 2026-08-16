@@ -5,10 +5,11 @@
  * cross-contaminated unrelated bindings of the same name in other components).
  */
 import type { Rule } from 'eslint';
+import type { VariableDeclarator } from 'estree';
 
 import { findPropertyByName, forEachNamespaceAccess, isFormHookCall, sourceMayContain } from '../utils/ast.js';
 
-const rule: Rule.RuleModule = {
+export default {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -22,14 +23,16 @@ const rule: Rule.RuleModule = {
 		schema: [],
 	},
 
-	create(context) {
-		// Every match requires a literal hook-name call (useForm / useFormContext /
-		// useFormState), all containing "useForm" — skip whole files cheaply.
-		if (!sourceMayContain(context, 'useForm')) {
-			return {};
-		}
+	createOnce(context: Rule.RuleContext) {
 		return {
-			VariableDeclarator(node) {
+			before() {
+				// Every match requires a literal hook-name call (useForm / useFormContext /
+				// useFormState), all containing "useForm" — skip whole files cheaply.
+				if (!sourceMayContain(context, 'useForm')) {
+					return false;
+				}
+			},
+			VariableDeclarator(node: VariableDeclarator) {
 				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;
 				}
@@ -66,5 +69,3 @@ const rule: Rule.RuleModule = {
 		};
 	},
 };
-
-export default rule;

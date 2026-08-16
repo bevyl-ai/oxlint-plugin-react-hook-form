@@ -9,7 +9,7 @@
  *   no autofix, since splitting into index paths is not the right migration.
  */
 import type { Rule } from 'eslint';
-import type { CallExpression, Node } from 'estree';
+import type { CallExpression, Node, VariableDeclarator } from 'estree';
 
 import {
 	findPropertyByName,
@@ -24,7 +24,7 @@ interface Options {
 	bracketAsArrayIndex?: boolean;
 }
 
-const rule: Rule.RuleModule = {
+export default {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -51,12 +51,7 @@ const rule: Rule.RuleModule = {
 		],
 	},
 
-	create(context) {
-		// Every match requires a literal hook-name call (useForm / useFormContext /
-		// useFormState), all containing "useForm" — skip whole files cheaply.
-		if (!sourceMayContain(context, 'useForm')) {
-			return {};
-		}
+	createOnce(context: Rule.RuleContext) {
 		function propertyKeyName(prop: Node): string | undefined {
 			if (prop.type !== 'Property' || prop.computed) {
 				return undefined;
@@ -168,7 +163,14 @@ const rule: Rule.RuleModule = {
 		}
 
 		return {
-			VariableDeclarator(node) {
+			before() {
+				// Every match requires a literal hook-name call (useForm / useFormContext /
+				// useFormState), all containing "useForm" — skip whole files cheaply.
+				if (!sourceMayContain(context, 'useForm')) {
+					return false;
+				}
+			},
+			VariableDeclarator(node: VariableDeclarator) {
 				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;
 				}
@@ -198,5 +200,3 @@ const rule: Rule.RuleModule = {
 		};
 	},
 };
-
-export default rule;

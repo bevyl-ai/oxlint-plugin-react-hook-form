@@ -21,7 +21,7 @@ interface JsxAttribute {
 	value: { type: string; expression?: Expression } | null;
 }
 
-const rule: Rule.RuleModule = {
+export default {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -36,11 +36,7 @@ const rule: Rule.RuleModule = {
 		schema: [],
 	},
 
-	create(context) {
-		// Matches require a literal useFieldArray call — skip whole files cheaply.
-		if (!sourceMayContain(context, 'useFieldArray')) {
-			return {};
-		}
+	createOnce(context: Rule.RuleContext) {
 		function isUseFieldArrayResult(identifier: Identifier): boolean {
 			const declarator = resolveDeclarator(context, identifier);
 			return declarator !== undefined && isFormHookCall(declarator.init, ['useFieldArray']);
@@ -85,6 +81,12 @@ const rule: Rule.RuleModule = {
 		}
 
 		return {
+			before() {
+				// Matches require a literal useFieldArray call — skip whole files cheaply.
+				if (!sourceMayContain(context, 'useFieldArray')) {
+					return false;
+				}
+			},
 			JSXAttribute(node: unknown) {
 				const attribute = node as JsxAttribute;
 				if (attribute.name.name !== 'key' || attribute.value?.type !== 'JSXExpressionContainer') {
@@ -108,5 +110,3 @@ const rule: Rule.RuleModule = {
 		};
 	},
 };
-
-export default rule;

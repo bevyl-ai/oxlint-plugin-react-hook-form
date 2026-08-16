@@ -6,7 +6,7 @@
  * on it is flagged.
  */
 import type { Rule } from 'eslint';
-import type { Node } from 'estree';
+import type { Node, VariableDeclarator } from 'estree';
 
 import {
 	findPropertyByName,
@@ -17,7 +17,7 @@ import {
 	sourceMayContain,
 } from '../utils/ast.js';
 
-const rule: Rule.RuleModule = {
+export default {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -30,12 +30,7 @@ const rule: Rule.RuleModule = {
 		schema: [],
 	},
 
-	create(context) {
-		// Every match requires a literal hook-name call (useForm / useFormContext /
-		// useFormState), all containing "useForm" — skip whole files cheaply.
-		if (!sourceMayContain(context, 'useForm')) {
-			return {};
-		}
+	createOnce(context: Rule.RuleContext) {
 		function checkControlReferences(node: Node, controlName: string): void {
 			const controlVar = getDeclaredVariable(context, node, controlName);
 			if (!controlVar) {
@@ -53,7 +48,14 @@ const rule: Rule.RuleModule = {
 		}
 
 		return {
-			VariableDeclarator(node) {
+			before() {
+				// Every match requires a literal hook-name call (useForm / useFormContext /
+				// useFormState), all containing "useForm" — skip whole files cheaply.
+				if (!sourceMayContain(context, 'useForm')) {
+					return false;
+				}
+			},
+			VariableDeclarator(node: VariableDeclarator) {
 				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;
 				}
@@ -86,5 +88,3 @@ const rule: Rule.RuleModule = {
 		};
 	},
 };
-
-export default rule;
