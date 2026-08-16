@@ -4,10 +4,12 @@
  * tracking is scope-resolved (upstream used a file-global name set, which
  * cross-contaminated unrelated bindings of the same name in other components).
  */
-import { findPropertyByName, forEachNamespaceAccess, isFormHookCall, sourceMayContain } from '../utils/ast.js';
-import type { CreateOnceRule } from '../utils/rule.js';
+import type { Rule } from 'eslint';
+import type { VariableDeclarator } from 'estree';
 
-const rule: CreateOnceRule = {
+import { findPropertyByName, forEachNamespaceAccess, isFormHookCall, sourceMayContain } from '../utils/ast.js';
+
+export default {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -21,7 +23,7 @@ const rule: CreateOnceRule = {
 		schema: [],
 	},
 
-	createOnce(context) {
+	createOnce(context: Rule.RuleContext) {
 		return {
 			before() {
 				// Every match requires a literal hook-name call (useForm / useFormContext /
@@ -30,7 +32,7 @@ const rule: CreateOnceRule = {
 					return false;
 				}
 			},
-			VariableDeclarator(node) {
+			VariableDeclarator(node: VariableDeclarator) {
 				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;
 				}
@@ -67,5 +69,3 @@ const rule: CreateOnceRule = {
 		};
 	},
 };
-
-export default rule;

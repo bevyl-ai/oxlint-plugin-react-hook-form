@@ -9,7 +9,7 @@
  *   no autofix, since splitting into index paths is not the right migration.
  */
 import type { Rule } from 'eslint';
-import type { CallExpression, Node } from 'estree';
+import type { CallExpression, Node, VariableDeclarator } from 'estree';
 
 import {
 	findPropertyByName,
@@ -19,13 +19,12 @@ import {
 	parentOf,
 	sourceMayContain,
 } from '../utils/ast.js';
-import type { CreateOnceRule } from '../utils/rule.js';
 
 interface Options {
 	bracketAsArrayIndex?: boolean;
 }
 
-const rule: CreateOnceRule = {
+export default {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -52,7 +51,7 @@ const rule: CreateOnceRule = {
 		],
 	},
 
-	createOnce(context) {
+	createOnce(context: Rule.RuleContext) {
 		function propertyKeyName(prop: Node): string | undefined {
 			if (prop.type !== 'Property' || prop.computed) {
 				return undefined;
@@ -171,7 +170,7 @@ const rule: CreateOnceRule = {
 					return false;
 				}
 			},
-			VariableDeclarator(node) {
+			VariableDeclarator(node: VariableDeclarator) {
 				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;
 				}
@@ -201,5 +200,3 @@ const rule: CreateOnceRule = {
 		};
 	},
 };
-
-export default rule;

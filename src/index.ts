@@ -1,4 +1,4 @@
-import { eslintCompatPlugin, type Plugin } from '@oxlint/plugins';
+import { eslintCompatPlugin } from '@oxlint/plugins';
 import type { ESLint, Linter } from 'eslint';
 
 import destructuringFormstate from './rules/destructuring-formstate.js';
@@ -18,7 +18,7 @@ const plugin = eslintCompatPlugin({
 		'no-nested-object-setvalue': noNestedObjectSetvalue,
 		'no-use-watch': noUseWatch,
 	},
-} as unknown as Plugin) as unknown as ESLint.Plugin & {
+} as never) as unknown as ESLint.Plugin & {
 	configs: Record<'recommended' | 'react-compiler', Linter.Config>;
 };
 

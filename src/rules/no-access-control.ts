@@ -5,7 +5,8 @@
  * (e.g. to useController/useFieldArray) stays allowed; only property access
  * on it is flagged.
  */
-import type { Node } from 'estree';
+import type { Rule } from 'eslint';
+import type { Node, VariableDeclarator } from 'estree';
 
 import {
 	findPropertyByName,
@@ -15,9 +16,8 @@ import {
 	parentOf,
 	sourceMayContain,
 } from '../utils/ast.js';
-import type { CreateOnceRule } from '../utils/rule.js';
 
-const rule: CreateOnceRule = {
+export default {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -30,7 +30,7 @@ const rule: CreateOnceRule = {
 		schema: [],
 	},
 
-	createOnce(context) {
+	createOnce(context: Rule.RuleContext) {
 		function checkControlReferences(node: Node, controlName: string): void {
 			const controlVar = getDeclaredVariable(context, node, controlName);
 			if (!controlVar) {
@@ -55,7 +55,7 @@ const rule: CreateOnceRule = {
 					return false;
 				}
 			},
-			VariableDeclarator(node) {
+			VariableDeclarator(node: VariableDeclarator) {
 				if (!isFormHookCall(node.init, ['useForm', 'useFormContext'])) {
 					return;
 				}
@@ -88,5 +88,3 @@ const rule: CreateOnceRule = {
 		};
 	},
 };
-
-export default rule;

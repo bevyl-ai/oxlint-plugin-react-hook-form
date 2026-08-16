@@ -3,6 +3,7 @@
  * index) must be used as the component key, otherwise re-renders break field
  * state when items are added, removed, or reordered.
  */
+import type { Rule } from 'eslint';
 import type { Expression, Identifier, Node, Super } from 'estree';
 
 import {
@@ -13,7 +14,6 @@ import {
 	resolveVariable,
 	sourceMayContain,
 } from '../utils/ast.js';
-import type { CreateOnceRule } from '../utils/rule.js';
 
 interface JsxAttribute {
 	type: 'JSXAttribute';
@@ -21,7 +21,7 @@ interface JsxAttribute {
 	value: { type: string; expression?: Expression } | null;
 }
 
-const rule: CreateOnceRule = {
+export default {
 	meta: {
 		type: 'problem',
 		docs: {
@@ -36,7 +36,7 @@ const rule: CreateOnceRule = {
 		schema: [],
 	},
 
-	createOnce(context) {
+	createOnce(context: Rule.RuleContext) {
 		function isUseFieldArrayResult(identifier: Identifier): boolean {
 			const declarator = resolveDeclarator(context, identifier);
 			return declarator !== undefined && isFormHookCall(declarator.init, ['useFieldArray']);
@@ -110,5 +110,3 @@ const rule: CreateOnceRule = {
 		};
 	},
 };
-
-export default rule;
